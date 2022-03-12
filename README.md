@@ -5,3 +5,6 @@ Ab-Ag Interface annotation of the Structural antibody database ([SAbDab](https:/
 SabDab PDB structures present in the `structures` folder can be obtained [here](http://opig.stats.ox.ac.uk/webapps/newsabdab/sabdab/search/?all=true#downloads).
 
 You may find a compressed file of `structures` folder (including both SadDab and Nanoshaper results) [here](https://u.pcloud.link/publink/show?code=XZCRiaXZrRr2fY5mUj89IwYOBqsaHLA00xfk).
+
+# This repo
+    This is the "working" repo to . Extra scripts and notebooks included.
