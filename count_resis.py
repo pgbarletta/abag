@@ -6,6 +6,7 @@ import pandas as pd
 import mdtraj as md
 import logging
 from collections import namedtuple
+ResiCount = namedtuple('ResiCount', ['antibody', 'antigen'])
 Chains = namedtuple('Chains', ['antibody', 'antigen'])
 HBondAtom = namedtuple('HBondAtom', ['chainID', 'chain_type',
                        'CDR', 'resSeq', 'resname', 'index', 'serial', 'element', 'is_sidechain'])
@@ -56,12 +57,15 @@ if __name__ == '__main__':
 
     pdb_list = list(filenames.keys())
     df_dataset = get_df_dataset(casa_dir)
-    count_polar = {}
+    count_resi_pdb = {}
+    count_resi = dict(zip(AA_LIST, itertools.repeat(0, len(AA_LIST))))
     for pdb_idcode in pdb_list:
         print(f"{pdb_idcode}", flush=True)
         pdb_filename = Path(filenames[pdb_idcode])
         trj_in = md.load(Path.joinpath(exposed_dir, pdb_idcode, pdb_filename))
-        
+
+        count_res_ab = dict(zip(AA_LIST, itertools.repeat(0, len(AA_LIST))))
+        count_res_ag = dict(zip(AA_LIST, itertools.repeat(0, len(AA_LIST))))
         ###
         # ANTIBODY
         ###
@@ -75,15 +79,9 @@ if __name__ == '__main__':
             # topology, but as long as I'm querying them, there's no problem.
             interface_ab.append(chainID+resname+str(resSeq))
 
-        cnt_SC_ab = 0
-        cnt_BB_ab = 0    
         for unique_ in set(interface_ab):
-            chainID = unique_[0]
             resname = unique_[1:4]
-            resSeq = int(unique_[4:])
-            cnt_SC, cnt_BB = count_ONs_res(trj_in.topology, resSeq, chainID)
-            cnt_SC_ab += cnt_SC
-            cnt_BB_ab += cnt_BB
+            count_res_ab[resname] += 1
 
         ###
         # ANTIGEN
@@ -98,21 +96,20 @@ if __name__ == '__main__':
             # topology, but as long as I'm querying them, there's no problem.
             interface_ag.append(chainID+resname+str(resSeq))
 
-        cnt_SC_ag = 0
-        cnt_BB_ag = 0
         for unique_ in set(interface_ag):
-            chainID = unique_[0]
             resname = unique_[1:4]
-            resSeq = int(unique_[4:])
-            cnt_SC, cnt_BB = count_ONs_res(trj_in.topology, resSeq, chainID)
-            cnt_SC_ag += cnt_SC
-            cnt_BB_ag += cnt_BB
+            count_res_ag[resname] += 1
+
+        count_resi_pdb[pdb_idcode] = ResiCount(antibody=count_res_ab, antigen=count_res_ag)
+        for key in count_resi.keys():
+            count_resi[key] += count_res_ab[key]
+            count_resi[key] += count_res_ag[key]
         
-        count_polar[pdb_idcode] = PolarCount(
-            cdr_SC=cnt_SC_ab, cdr_BB=cnt_BB_ab, epi_SC=cnt_SC_ag, epi_BB=cnt_BB_ag)
-        
-    with open(Path.joinpath(casa_dir, 'data', 'count_polar.pkl'), 'wb') as file:
-        pickle.dump(count_polar, file)
+    with open(Path.joinpath(casa_dir, 'data', 'count_resi_pdb.pkl'), 'wb') as file:
+        pickle.dump(count_resi_pdb, file)
+    with open(Path.joinpath(casa_dir, 'data', 'count_resi.pkl'), 'wb') as file:
+        pickle.dump(count_resi, file)
+
 
 
   
