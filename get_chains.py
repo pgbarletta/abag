@@ -21,35 +21,33 @@ if __name__ == '__main__':
             pdb_list.append(linea.strip())
     df_dataset = get_df_dataset(casa_dir)
     with open(Path.joinpath(
-        casa_dir, "data", 'buried_ab_ag_interface_res.pickle'), 'rb') as file:
+            casa_dir, "data", 'buried_ab_ag_interface_res.pickle'), 'rb') as file:
         df_interface = pickle.load(file)
 
     filename_dict = {}
     chains_dict = {}
     for pdb_idcode in pdb_list:
-        pdb_string = pdb_idcode + "_complex_??_?.pdb"
-        pdbs = glob.glob(str(Path.joinpath(
+        target_heavy_chain = df_interface.query(
+            f"idcode == '{pdb_idcode}'").chainID.values[0]
+        pdb_string = pdb_idcode + "_complex_??_*.pdb"
+        chains_list = glob.glob(str(Path.joinpath(
             casa_dir, "structures", "exposed", pdb_idcode, pdb_string)))
-        if len(pdbs) == 0:
-            print(f"BAD: {pdb_idcode}. No files. ", flush=True)
-        conteo = np.array([sum(1 for line in open(pdb)) for pdb in pdbs])
-        largest = (-conteo).argsort()
-        for idx in largest:
-            pdb_filename = Path(pdbs[idx]).name
-            c = Chains(antibody=(pdb_filename[13], pdb_filename[14]),
-                    antigen=pdb_filename[16])
-            if len(df_dataset.query(f"idcode == '{pdb_idcode}' and chainID in {c.antibody}")) == 0:
-                # This file is the largest, but its not included in our `df_dataset`
-                continue
+        assert len(chains_list) != 0, f"BAD: {pdb_idcode}. No files. "
 
-            chains_dict[pdb_idcode] = c
-            filename_dict[pdb_idcode] = pdb_filename
-            break
+        for pdb_full_path in chains_list:
+            pdb_filename = Path(pdb_full_path).name
+            H_chain = pdb_filename[13]
+            L_chain = pdb_filename[14]
+            AG_chain_a = pdb_filename[16]
+            AG_chain_b = pdb_filename[17]
+            if H_chain == target_heavy_chain:
+                c = Chains(antibody=(H_chain, L_chain), antigen=(AG_chain_a, AG_chain_b))
+                chains_dict[pdb_idcode] = c
+                filename_dict[pdb_idcode] = pdb_filename
+                break
         else:
-            print(
-                f"BAD: {pdb_idcode}. Available files are not included in the dataset. ",
-                flush=True)
-
+            raise RuntimeError(f"BAD: {pdb_idcode}. "
+                               "Available files are not included in the dataset. ")
 
     with open(Path.joinpath(data_dir, 'filenames.pkl'), 'wb') as file:
         pickle.dump(filename_dict, file)
