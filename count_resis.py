@@ -2,9 +2,8 @@ import sys
 from pathlib import Path
 import itertools
 import pickle
-import pandas as pd
 import mdtraj as md
-import logging
+from collections import Counter
 from collections import namedtuple
 ResiCount = namedtuple('ResiCount', ['antibody', 'antigen'])
 Chains = namedtuple('Chains', ['antibody', 'antigen'])
@@ -59,6 +58,8 @@ if __name__ == '__main__':
     df_dataset = get_df_dataset(casa_dir)
     count_resi_pdb = {}
     count_resi = dict(zip(AA_LIST, itertools.repeat(0, len(AA_LIST))))
+    count_tot_pdb = {}
+    count_tot = dict(zip(AA_LIST, itertools.repeat(0, len(AA_LIST))))
     for pdb_idcode in pdb_list:
         print(f"{pdb_idcode}", flush=True)
         pdb_filename = Path(filenames[pdb_idcode])
@@ -66,6 +67,16 @@ if __name__ == '__main__':
 
         count_res_ab = dict(zip(AA_LIST, itertools.repeat(0, len(AA_LIST))))
         count_res_ag = dict(zip(AA_LIST, itertools.repeat(0, len(AA_LIST))))
+
+        ###
+        # TOTAL
+        ###
+        count = Counter([residue.name for residue in trj_in.topology.residues])
+        count_tot_this_pdb = dict(zip(AA_LIST, itertools.repeat(0, len(AA_LIST))))
+        for key, val in count.items():
+            count_tot_this_pdb[key] = val
+            count_tot[key] += val
+        count_tot_pdb[pdb_idcode] = count_tot_this_pdb
         ###
         # ANTIBODY
         ###
@@ -109,6 +120,10 @@ if __name__ == '__main__':
         pickle.dump(count_resi_pdb, file)
     with open(Path.joinpath(casa_dir, 'data', 'count_resi.pkl'), 'wb') as file:
         pickle.dump(count_resi, file)
+    with open(Path.joinpath(casa_dir, 'data', 'count_tot_pdb.pkl'), 'wb') as file:
+        pickle.dump(count_tot_pdb, file)
+    with open(Path.joinpath(casa_dir, 'data', 'count_tot.pkl'), 'wb') as file:
+        pickle.dump(count_tot, file)
 
 
 
