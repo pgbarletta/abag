@@ -83,7 +83,7 @@ for pdb_idcode in pdb_list:
         logging.warning(
             f"- {pdb_idcode} raised: {e.__class__}, saying: {e}, during hydrophobic "
             f"interactions calculation. Probably has no hydrophobic interactions.")
-        raise e
+        # raise e
     finally:
         # Collect
         df_hydrophobic_atom_indices = pd.concat([df_hydrophobic_atom_indices, pd.DataFrame({
@@ -107,7 +107,7 @@ lista_df_hydrophobic = (
      df_hydrophobic_resSeq, df_hydrophobic_resname, df_hydrophobic_chain_ID,
      df_hydrophobic_chain_type, df_hydrophobic_cdr])
 
-with open(Path.joinpath(casa_dir, 'data', 'hydrophobic.pkl'), 'wb') as file:
+with open(Path.joinpath(casa_dir, 'data', '4_hydrophobic.pkl'), 'wb') as file:
     pickle.dump(lista_df_hydrophobic, file)
 
 print(f" --- Done -- ")

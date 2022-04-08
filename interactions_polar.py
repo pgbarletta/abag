@@ -176,6 +176,7 @@ def get_interfacing_waters(wat_donor_ag_lines, wat_donor_ab_lines,
 def parse_hb2(pdb_idcode, hb2_file, df_dataset, topologia, ab_chains, ag_chains):
     hbonds_dict = {}
     saltBridge_dict = {}
+    wat_dict = {}
 
     wat_donor_ag_lines = []
     wat_acceptor_ag_lines = []
@@ -231,10 +232,10 @@ def parse_hb2(pdb_idcode, hb2_file, df_dataset, topologia, ab_chains, ag_chains)
                 pdb_idcode, res_str, topologia, df_dataset, ab_chains)
 
             # Only add the protein residue as key
-            if acceptor.serial in hbonds_dict:
-                hbonds_dict[acceptor.serial].append(HBond(donor=donor, acceptor=acceptor))
+            if acceptor.serial in wat_dict:
+                wat_dict[acceptor.serial].append(HBond(donor=donor, acceptor=acceptor))
             else:
-                hbonds_dict[acceptor.serial] = [HBond(donor=donor, acceptor=acceptor)]
+                wat_dict[acceptor.serial] = [HBond(donor=donor, acceptor=acceptor)]
 
     for wat_str, res_list in interface_acc.items():
         for res_str in res_list:
@@ -243,12 +244,12 @@ def parse_hb2(pdb_idcode, hb2_file, df_dataset, topologia, ab_chains, ag_chains)
             acceptor = get_atom_from_string(
                 pdb_idcode, wat_str, topologia, df_dataset, ab_chains)
             # Only add the protein residue as key
-            if donor.serial in hbonds_dict:
-                hbonds_dict[donor.serial].append(HBond(donor=donor, acceptor=acceptor))
+            if donor.serial in wat_dict:
+                wat_dict[donor.serial].append(HBond(donor=donor, acceptor=acceptor))
             else:
-                hbonds_dict[donor.serial] = [HBond(donor=donor, acceptor=acceptor)]
+                wat_dict[donor.serial] = [HBond(donor=donor, acceptor=acceptor)]
 
-    return hbonds_dict, saltBridge_dict
+    return hbonds_dict, saltBridge_dict, wat_dict
 
 
 if __name__ == "__main__":
@@ -261,6 +262,7 @@ if __name__ == "__main__":
     df_dataset = get_df_dataset(casa_dir)
     hbonds_dict = {}
     saltBridge_dict = {}
+    wat_dict = {}
 
     # check_pdb = '4wfe'
     # idx = pdb_list.index(check_pdb)
@@ -281,10 +283,13 @@ if __name__ == "__main__":
 
         hb2_file = Path.joinpath(hbond_dir, pdb_filename.name[0:-3] + "hb2")
 
-        hbonds_dict[pdb_idcode], saltBridge_dict[pdb_idcode] = parse_hb2(
-            pdb_idcode, hb2_file, df_dataset, trj_in.topology, ab_chains, ag_chains)
+        hbonds_dict[pdb_idcode], saltBridge_dict[pdb_idcode], wat_dict[pdb_idcode] =\
+            parse_hb2(pdb_idcode, hb2_file, df_dataset,
+                      trj_in.topology, ab_chains, ag_chains)
 
     with open(Path.joinpath(casa_dir, 'data', 'polar_hbonds.pkl'), 'wb') as file:
         pickle.dump(hbonds_dict, file)
     with open(Path.joinpath(casa_dir, 'data', 'polar_saltBridge.pkl'), 'wb') as file:
         pickle.dump(saltBridge_dict, file)
+    with open(Path.joinpath(casa_dir, 'data', 'polar_wat.pkl'), 'wb') as file:
+        pickle.dump(wat_dict, file)
